@@ -769,8 +769,8 @@ var demo = {
 	loadRackContent: function(box, x, y, z, width, height, depth, cube, cut, json, parent, oldRack) {
         var servers = json.servers;		
         var Acolor = ['#18ff00', '#fff600', '#0012ff', '#ff00d2', '#00f0ff', '#fff000', '#4b83b3', '#6bb34b', '#b3a34b', '#b36d4b', '#b34b9c', '#ff0000'];
-
 		var Tempcolor = Acolor[parseInt(Math.random() * 10)];
+
         for (var i=0;i<servers.server.length;i++){
             var temp_Y = servers.server[i].position;
             var temp_H = servers.server[i].u;
@@ -845,11 +845,22 @@ var demo = {
 		};
         serverPanel.setPosition(-0.5, 0, serverBody.getDepth()/2+(cube.getDepth()-serverBody.getDepth())/2);
         if(server_type == 'chassis'){
-            var serverColor = '#FFFFFF';
-            serverPanel.s({
-                'm.color': serverColor,
-                'm.ambient': serverColor,
-            });
+            var serverColor = null;		
+            if (!!document.getElementsByClassName('temp')[0]&&document.getElementsByClassName('temp')[0].getAttribute("class") == 'temp active') {
+	            serverPanel.s({
+	                'm.color': serverColor,
+	                'm.ambient': serverColor,
+					'm.transparent': true,
+               		'm.texture.image': demo.getRes('servers-img/re_chassis.png'),
+	            });
+            } else {
+	            serverPanel.s({
+	                'm.color': serverColor,
+	                'm.ambient': serverColor,
+					'm.transparent': true,
+               		 'm.texture.image': demo.getRes('servers-img/re_chassis.png'),
+	            });	
+            }
         }
 
 		// ComboNode  组合体 —— 由运算体封装而来的组合体，使用起来更加方便，只需传入运算符即可完成复杂的运算
@@ -862,103 +873,35 @@ var demo = {
         box.add(server);
 
         if(server_type == 'chassis'){
-            var isRendered = false;
             var xoffset = 2.1008, yoffset = 0.9897;
             var width = width + 2;
             var height = height +1;
             var cardWidth = (width - xoffset*2)/2;
             var count = 2;
 
+       		var cha_colors = ['#18ff00', '#fff600', '#0012ff', '#ff00d2', '#00f0ff', '#fff000', '#4b83b3', '#6bb34b', '#b3a34b', '#b36d4b', '#b34b9c', '#ff0000'];
+
             for(var i = 0; i< count; i++){
-                var cardColor = '#FFFFFF';
-                if(i > 5 && !isRendered) {
-                    cardColor = color;
-                    isRendered = true;
-                }
+				var cha_color = cha_colors[parseInt(Math.random() * 10)];
                 var params={
                     'height': (height-yoffset*2)/7-1.35,
                     'width': cardWidth-0.5,
-                    'depth':depth*0.4,
+                    'depth':depth*0.9,
                     'pic': demo.RES_PATH + '/servers-img/1.FSM ITME.png',
-                    //'pic': demo.RES_PATH + '/'+ 'card'+(i%4+1) +'.png',
-                    'color': cardColor
+                    'cha_color': cha_color
                 };
                 var card=demo.createCard(params);
-                //card.setRotation(0, 0, Math.PI/180 * 90);
                 box.add(card);
 
                 card.setParent(server);
                 card.setClient('type','card');
                 card.setClient('dbl.func', demo.showCardTable);
                 card.setClient('BID','card-'+i);
-                card.setClient('isAlarm', cardColor != '#FFFFFF');
-                //card.p(-width/2 + xoffset + (i+0.5) * cardWidth,-height/2+yoffset,serverPanel.getPositionZ()-1);
                 card.p(-width/2 + xoffset + (i+0.5) * cardWidth-0.5,-height/2+yoffset+2.1,serverPanel.getPositionZ()-1);
                 card.setClient('animation', 'pullOut.z');
-                if(card.getClient('isAlarm')){
-                    oldRack.alarmCard=card;
-                }
             }
         }
         return server;
-
-
-		// var picMap = {
-		// 	// 2u高度占2个刻度，4.445是1个单位高度
-		// 	'server1.jpg': 4.445 * 2,
-		// 	// 3u高度占3个刻度
-		// 	'server2.jpg': 4.445 * 3
-		// }
-		// var x = cube.getPositionX();
-		// var z = cube.getPositionZ();
-		// var width = cut.getWidth();
-		// var height = picMap[pic];
-		// var depth = cut.getDepth();
-		// // 节点里面灰色区域大小,填充的图片
-		// var serverBody = new mono.Cube(width - 2, height - 2, depth - 4);
-		// var bodyColor = color ? color : '#5B6976';
-		// serverBody.s({
-		// 	// 除了侧面其他的cube面的颜色
-		// 	'm.color': bodyColor,
-		// 	// 侧面
-		// 	'm.ambient': bodyColor,
-		// 	'm.type': 'phong',
-		// 	'm.texture.image': demo.getRes('rack_inside.jpg'),
-		// });
-		// serverBody.setPosition(0, 0.5, (cube.getDepth() - serverBody.getDepth()) / 2);
-
-		// // server最前面芯片图片的坐标
-		// var serverPanel = new mono.Cube(width + 2, height + 1, 0.5);
-		// if (!!document.getElementsByClassName('temp')[0]&&document.getElementsByClassName('temp')[0].getAttribute("class") == 'temp active') {
-		// 	color = Tempcolor;
-		// 	serverPanel.s({
-		// 		'm.texture.image': demo.getRes('rack_inside.jpg'),
-		// 		'front.m.texture.color': color,
-		// 		'front.m.texture.repeat': new mono.Vec2(1, 1),
-		// 		'm.specularStrength': 100,
-		// 		'm.transparent': false,
-		// 		'm.color': color,
-		// 		'm.ambient': color,
-		// 	});
-		// } else {
-		// 	color = color ? color : '#FFFFFF';
-		// 	serverPanel.s({
-		// 		'm.texture.image': demo.getRes('rack_inside.jpg'),
-		// 		'front.m.texture.image': demo.RES_PATH + '/' + pic,
-		// 		'front.m.texture.repeat': new mono.Vec2(1, 1),
-		// 		'm.specularStrength': 100,
-		// 		'm.transparent': false,
-		// 		'm.color': color,
-		// 		'm.ambient': color,
-		// 	});
-		// };
-		// serverPanel.setPosition(0, 0, serverBody.getDepth() / 2 + (cube.getDepth() - serverBody.getDepth()) / 2);
-		// // ComboNode  组合体 —— 由运算体封装而来的组合体，使用起来更加方便，只需传入运算符即可完成复杂的运算
-		// var server = new mono.ComboNode([serverBody, serverPanel], ['+']);
-		// server.setClient('animation', 'pullOut.z');
-		// server.setPosition(0.5, 0, -5);
-		// box.add(server);
-		// return server;
 	},
 
     createCard: function(json){
@@ -970,8 +913,25 @@ var demo = {
             height=json.height || 50,
             depth=json.depth || 50;
         var rotate=json.rotate || [0,0,0];
-        var color = json.color || 'white';
+        var color = json.cha_color || 'white';
         var pic = json.pic || demo.getRes('card1.png');
+        if (!!document.getElementsByClassName('temp')[0]&&document.getElementsByClassName('temp')[0].getAttribute("class") == 'temp active') {
+        	var style={
+                'm.color': color,
+                'm.ambient': color,
+                'm.texture.image': demo.getRes('gray.png'),
+                'front.m.texture.color': color,
+                'back.m.texture.image': pic,
+            }
+        } else {
+        	var style={
+                'm.color': color,
+                'm.ambient': color,
+                'm.texture.image': demo.getRes('gray.png'),
+                'front.m.texture.image': pic,
+                'back.m.texture.image': pic,
+            }
+        }
 
         var parts=[{
             //card panel
@@ -982,13 +942,7 @@ var demo = {
             translate: [x, y, z+1],
             rotate: rotate,
             op: '+',
-            style:{
-                'm.color': color,
-                'm.ambient': color,
-                'm.texture.image': demo.getRes('gray.png'),
-                'front.m.texture.image': pic,
-                'back.m.texture.image': pic,
-            }
+            style:style
         },{
             //card body
             type: 'cube',
@@ -999,13 +953,13 @@ var demo = {
             rotate: rotate,
             op: '+',
             style:{
-                'm.color': color,
-                'm.ambient': color,
+                'm.color': 'gray',
+                'm.ambient':'gray',
+				'm.transparent': true,
                 'm.texture.image': demo.getRes('gray.png'),
                 'top.m.texture.image': demo.getRes('card_body.png'),
                 'bottom.m.texture.image': demo.getRes('card_body.png'),
                 'left.m.texture.flipX': true,
-                'm.transparent': true,
                 'm.lightmap.image':demo.getRes('outside_lightmap.jpg'),
             }
         }];

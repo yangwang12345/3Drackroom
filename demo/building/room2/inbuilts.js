@@ -484,7 +484,7 @@ demo.registerCreator('rack', function(box, json) {
 		'm.ambient': '#557E7A',
 		'm.type': 'phong',
 		'm.specularStrength': 50,
-		'front.m.texture.image': demo.getRes('rack.jpg'),
+		'front.m.texture.image': demo.getRes('rack.png'),
 		'front.m.texture.repeat': new mono.Vec2(1, 1),
 		'front.m.specularmap.image': demo.getRes('white.png'),
 		'front.m.color': '#666',
@@ -568,7 +568,7 @@ demo.registerCreator('rack', function(box, json) {
 
 	var loader = function(box, width, height, depth, rack, json) {
 		// cut rack的内壁
-		var cut = new mono.Cube(width * 0.75, height - 10, depth * 0.7);
+        var cut=new mono.Cube(width*0.83, height-6.5, depth*0.7);
 		cut.s({
 			'm.color': '#333333',
 			'm.ambient': '#333333',
