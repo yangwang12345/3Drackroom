@@ -133,10 +133,10 @@ var demo = {
 			label: '温度图全景',
 			icon: 'edit.png',
 			class: 'allTemp',
-			clickFunction: function(){		
-				demo.resetView(network);		
-				var showing=network.temperatureView;
-				if(!showing){
+			clickFunction: function() {
+				demo.resetView(network);
+				var showing = network.temperatureView;
+				if (!showing) {
 					demo.toggleTemperatureView(network);
 				}
 			}
@@ -767,60 +767,114 @@ var demo = {
 	},
 	// demo.loadRackContent(box, x, y, z, width, height, depth,cube, cut, json, newRack, rack);
 	loadRackContent: function(box, x, y, z, width, height, depth, cube, cut, json, parent, oldRack) {
-        var servers = json.servers;		
-        var Acolor = ['#18ff00', '#fff600', '#0012ff', '#ff00d2', '#00f0ff', '#fff000', '#4b83b3', '#6bb34b', '#b3a34b', '#b36d4b', '#b34b9c', '#ff0000'];
+		var servers = json.servers;
+		var chassis = json.chassises
+		var Acolor = ['#18ff00', '#fff600', '#0012ff', '#ff00d2', '#00f0ff', '#fff000', '#4b83b3', '#6bb34b', '#b3a34b', '#b36d4b', '#b34b9c', '#ff0000'];
 		var Tempcolor = Acolor[parseInt(Math.random() * 10)];
+		var id = oldRack.getClient('rackid');
+		for (var jsonkey in servers) {
+			if (id == jsonkey && servers[jsonkey].length > 0) {
+				create(servers[jsonkey]);
+			}
+		}
+		for (var jsonkey in chassis) {
+			if (id == jsonkey && chassis[jsonkey].length > 0) {
+				create(chassis[jsonkey]);
+			}
+		}
 
-        for (var i=0;i<servers.server.length;i++){
-            var temp_Y = servers.server[i].position;
-            var temp_H = servers.server[i].u;
-            var server_type = servers.server[i].type;
-            var server_img = servers.server[i].img || null;
-            var card_json = servers.server[i];
+		function create(obj) {
+			for (var i = 0; i < obj.length; i++) {
+				var temp_Y = obj[i].position;
+				var temp_H = obj[i].u;
+				var server_type = obj[i].type;
+				var id = obj[i].id;
+				var server_img = obj[i].img || null;
+				var card_json = obj[i];
 
-            var number = temp_H;
-            var pic='server'+number+'.jpg';
-            var color = null;
-            var server=this.createServer(box, cube, cut, pic, color, oldRack,Tempcolor,server_img,server_type,card_json);
+				var idtext = "serverid";
+				if (obj[i].type == "chassis") {
+					idtext = "chassisid";
+				}
 
-			var size = server.getBoundingBox().size();
-            server.setPositionY(this.setServerP(temp_Y,temp_H))
-            server.setPositionZ(server.getPositionZ()+4.5);
-            server.setParent(parent);
-       }
+				var number = temp_H;
+				var pic = 'server' + number + '.jpg';
+				var color = null;
+				var server = demo.createServer(box, cube, cut, pic, color, oldRack, Tempcolor, server_img, server_type, card_json,id);
+
+				server.setClient(idtext, id);
+
+				var size = server.getBoundingBox().size();
+				server.setPositionY(demo.setServerP(temp_Y, temp_H))
+				server.setPositionZ(server.getPositionZ() + 4.5);
+				server.setParent(parent);
+			}
+		}
 	},
 	// 创建机柜横向节点
-	createServer: function(box, cube, cut, pic, color, oldRack,Tempcolor,server_img,server_type,card_json) {
-        var picMap = {
-            'server1.jpg': 4.45*1,
-            'server2.jpg': 4.45*2,
-            'server3.jpg': 4.45*3,
-            'server4.jpg': 4.45*4,
-            'server5.jpg': 4.45*5,
-            'server6.jpg': 4.45*6,
-            'server7.jpg': 4.45*7,
-            'server8.jpg': 4.45*8,
-            'server9.jpg': 4.45*9,
-            'server10.jpg': 4.45*10,
+	createServer: function(box, cube, cut, pic, color, oldRack, Tempcolor, server_img, server_type, card_json,id) {
+		var nodes_id=id;
+        var XHR=null;
+        if (window.XMLHttpRequest) {
+            XHR = new XMLHttpRequest();
+        } else if (window.ActiveXObject) {
+            XHR = new ActiveXObject("Microsoft.XMLHTTP");
+        } else {
+            XHR = null;
         }
-        var x=cube.getPositionX();
-        var z=cube.getPositionZ();
-        var width=cut.getWidth()-2.5;
-        var height = picMap[pic];
-        var depth=cut.getDepth();
+        if(XHR){
+            XHR.open("GET", url);
+            XHR.onreadystatechange = function () {
+                // readyState值说明
+                // 0,初始化,XHR对象已经创建,还未执行open
+                // 1,载入,已经调用open方法,但是还没发送请求
+                // 2,载入完成,请求已经发送完成
+                // 3,交互,可以接收到部分数据
 
-        var serverBody=new mono.Cube(width-2, height-2, depth-4);
-        var bodyColor=color?color:'#5B6976';
-        serverBody.s({
-            'm.color': bodyColor,
-            'm.ambient': bodyColor,
-            'm.type':'phong',
-            'm.texture.image': demo.getRes('rack_inside.jpg'),
-        });
-        serverBody.setPosition(-0.5, 0.5, (cube.getDepth()-serverBody.getDepth())/2);
+                // status值说明
+                // 200:成功
+                // 404:没有发现文件、查询或URl
+                // 500:服务器产生内部错误
+                if (XHR.readyState == 4 && XHR.status == 200) {
+                    // 这里可以对返回的内容做处理
+                    // 一般会返回JSON或XML数据格式
+                    console.log(XHR.responseText);
+                    // 主动释放,JS本身也会回收的
+                    XHR = null;
+                }
+            };
+            XHR.send();
+        }
+		var picMap = {
+			'server1.jpg': 4.45 * 1,
+			'server2.jpg': 4.45 * 2,
+			'server3.jpg': 4.45 * 3,
+			'server4.jpg': 4.45 * 4,
+			'server5.jpg': 4.45 * 5,
+			'server6.jpg': 4.45 * 6,
+			'server7.jpg': 4.45 * 7,
+			'server8.jpg': 4.45 * 8,
+			'server9.jpg': 4.45 * 9,
+			'server10.jpg': 4.45 * 10,
+		}
+		var x = cube.getPositionX();
+		var z = cube.getPositionZ();
+		var width = cut.getWidth() - 2.5;
+		var height = picMap[pic];
+		var depth = cut.getDepth();
 
-        var serverPanel=new mono.Cube(width+2, height, 0.5);
-		if (!!document.getElementsByClassName('temp')[0]&&document.getElementsByClassName('temp')[0].getAttribute("class") == 'temp active') {
+		var serverBody = new mono.Cube(width - 2, height - 2, depth - 4);
+		var bodyColor = color ? color : '#5B6976';
+		serverBody.s({
+			'm.color': bodyColor,
+			'm.ambient': bodyColor,
+			'm.type': 'phong',
+			'm.texture.image': demo.getRes('rack_inside.jpg'),
+		});
+		serverBody.setPosition(-0.5, 0.5, (cube.getDepth() - serverBody.getDepth()) / 2);
+
+		var serverPanel = new mono.Cube(width + 2, height, 0.5);
+		if (!!document.getElementsByClassName('temp')[0] && document.getElementsByClassName('temp')[0].getAttribute("class") == 'temp active') {
 			color = Tempcolor;
 			serverPanel.s({
 				'm.texture.image': demo.getRes('rack_inside.jpg'),
@@ -834,175 +888,185 @@ var demo = {
 		} else {
 			color = color ? color : '#FFFFFF';
 			serverPanel.s({
-            'm.texture.image': demo.getRes('rack_inside.jpg'),
-            'front.m.texture.image': demo.RES_PATH + '/' + (server_img ||pic),
-            'front.m.texture.repeat': new mono.Vec2(1, 1),
-            'm.specularStrength': 100,
-            'm.transparent': true,
-            'm.color': color,
-            'm.ambient': color,
+				'm.texture.image': demo.getRes('rack_inside.jpg'),
+				'front.m.texture.image': demo.RES_PATH + '/' + (server_img || pic),
+				'front.m.texture.repeat': new mono.Vec2(1, 1),
+				'm.specularStrength': 100,
+				'm.transparent': true,
+				'm.color': color,
+				'm.ambient': color,
 			});
 		};
-        serverPanel.setPosition(-0.5, 0, serverBody.getDepth()/2+(cube.getDepth()-serverBody.getDepth())/2);
-        if(server_type == 'chassis'){
-            var serverColor = null;		
-            if (!!document.getElementsByClassName('temp')[0]&&document.getElementsByClassName('temp')[0].getAttribute("class") == 'temp active') {
-	            serverPanel.s({
-	                'm.color': serverColor,
-	                'm.ambient': serverColor,
+		serverPanel.setPosition(-0.5, 0, serverBody.getDepth() / 2 + (cube.getDepth() - serverBody.getDepth()) / 2);
+		if (server_type == 'chassis') {
+			var serverColor = null;
+			if (!!document.getElementsByClassName('temp')[0] && document.getElementsByClassName('temp')[0].getAttribute("class") == 'temp active') {
+				serverPanel.s({
+					'm.color': serverColor,
+					'm.ambient': serverColor,
 					'm.transparent': true,
-               		'm.texture.image': demo.getRes('servers-img/re_chassis.png'),
-	            });
-            } else {
-	            serverPanel.s({
-	                'm.color': serverColor,
-	                'm.ambient': serverColor,
+					'm.texture.image': demo.getRes('servers-img/re_chassis.png'),
+				});
+			} else {
+				serverPanel.s({
+					'm.color': serverColor,
+					'm.ambient': serverColor,
 					'm.transparent': true,
-               		 'm.texture.image': demo.getRes('servers-img/re_chassis.png'),
-	            });	
-            }
-        }
+					'm.texture.image': demo.getRes('servers-img/re_chassis.png'),
+				});
+			}
+		}
 
 		// ComboNode  组合体 —— 由运算体封装而来的组合体，使用起来更加方便，只需传入运算符即可完成复杂的运算
-        var server=new mono.ComboNode([serverBody, serverPanel], ['+']);
-        //server.setRotation(0, Math.PI/180 * 90, 0);
-        server.setClient('animation', 'pullOut.z');
-        server.setClient('type','drawer');
-        server.setClient('dbl.func', demo.showCardTable);
-        server.setPosition(0.5, 0, -5);
-        box.add(server);
+		var server = new mono.ComboNode([serverBody, serverPanel], ['+']);
+		//server.setRotation(0, Math.PI/180 * 90, 0);
+		server.setClient('animation', 'pullOut.z');
+		server.setClient('type', 'drawer');
+		server.setClient('dbl.func', demo.showCardTable);
+		server.setPosition(0.5, 0, -5);
+		box.add(server);
 
-        if(server_type == 'chassis'){
-            var xoffset = 2.1008, yoffset = 0.9897;
-            var width = width + 2;
-            var height = height +1;
-            var cardWidth = (width - xoffset*2)/2;
-            var count = 2;
+		if (server_type == 'chassis') {
+			var cards = card_json.cards;
+			var xoffset = 2.1008,
+				yoffset = 0.9897;
+			var width = width + 2;
+			var height = height + 1;
+			var cardWidth = (width - xoffset * 2) / 2;
+			var count = cards.length;
 
-       		var cha_colors = ['#18ff00', '#fff600', '#0012ff', '#ff00d2', '#00f0ff', '#fff000', '#4b83b3', '#6bb34b', '#b3a34b', '#b36d4b', '#b34b9c', '#ff0000'];
+			var cha_colors = ['#18ff00', '#fff600', '#0012ff', '#ff00d2', '#00f0ff', '#fff000', '#4b83b3', '#6bb34b', '#b3a34b', '#b36d4b', '#b34b9c', '#ff0000'];
 
-            for(var i = 0; i< count; i++){
+			for (var i = 0; i < count; i++) {
 				var cha_color = cha_colors[parseInt(Math.random() * 10)];
-                var params={
-                    'height': (height-yoffset*2)/7-1.35,
-                    'width': cardWidth-0.5,
-                    'depth':depth*0.9,
-                    'pic': demo.RES_PATH + '/servers-img/1.FSM ITME.png',
-                    'cha_color': cha_color
-                };
-                var card=demo.createCard(params);
-                box.add(card);
-
-                card.setParent(server);
-                card.setClient('type','card');
-                card.setClient('dbl.func', demo.showCardTable);
-                card.setClient('BID','card-'+i);
-                card.p(-width/2 + xoffset + (i+0.5) * cardWidth-0.5,-height/2+yoffset+2.1,serverPanel.getPositionZ()-1);
-                card.setClient('animation', 'pullOut.z');
-            }
-        }
-        return server;
+				var position = cards[i].position;
+				var params = {
+					'height': ((height - yoffset * 2) / 7) - 1.35,
+					'width': cardWidth - 0.5,
+					'depth': depth * 0.9,
+					'pic': demo.RES_PATH + '/' + (cards[i].img || 'servers-img/1.FSM ITME.png'),
+					'cha_color': cha_color
+				};
+				var card = demo.createCard(params);
+				box.add(card);
+				var cardX = -11.7
+				if (position % 2 == 0) {
+					position = position / 2;
+					cardX = 10.8;
+				} else {
+					position = (position + 1) / 2
+				}
+				var cardY = -16.2 + (3.5958 * (position - 1)) + position;
+				card.setParent(server);
+				card.setClient('cardid', cards[i].id);
+				card.setClient('type', 'card');
+				card.setClient('dbl.func', demo.showCardTable);
+				card.setClient('BID', 'card-' + i);
+				card.p(cardX, cardY, serverPanel.getPositionZ() - 1);
+				card.setClient('animation', 'pullOut.z');
+			}
+		}
+		return server;
 	},
 
-    createCard: function(json){
-        var translate=json.translate || [0,0,0];
-        var x=translate[0],
-            y=translate[1],
-            z=translate[2];
-        var width=json.width || 10,
-            height=json.height || 50,
-            depth=json.depth || 50;
-        var rotate=json.rotate || [0,0,0];
-        var color = json.cha_color || 'white';
-        var pic = json.pic || demo.getRes('card1.png');
-        if (!!document.getElementsByClassName('temp')[0]&&document.getElementsByClassName('temp')[0].getAttribute("class") == 'temp active') {
-        	var style={
-                'm.color': color,
-                'm.ambient': color,
-                'm.texture.image': demo.getRes('gray.png'),
-                'front.m.texture.color': color,
-                'back.m.texture.image': pic,
-            }
-        } else {
-        	var style={
-                'm.color': color,
-                'm.ambient': color,
-                'm.texture.image': demo.getRes('gray.png'),
-                'front.m.texture.image': pic,
-                'back.m.texture.image': pic,
-            }
-        }
+	createCard: function(json) {
+		var translate = json.translate || [0, 0, 0];
+		var x = translate[0],
+			y = translate[1],
+			z = translate[2];
+		var width = json.width || 10,
+			height = json.height || 50,
+			depth = json.depth || 50;
+		var rotate = json.rotate || [0, 0, 0];
+		var color = json.cha_color || 'white';
+		var pic = json.pic || demo.getRes('card1.png');
+		if (!!document.getElementsByClassName('temp')[0] && document.getElementsByClassName('temp')[0].getAttribute("class") == 'temp active') {
+			var style = {
+				'm.color': color,
+				'm.ambient': color,
+				'm.texture.image': demo.getRes('gray.png'),
+				'front.m.texture.color': color,
+				'back.m.texture.image': pic,
+			}
+		} else {
+			var style = {
+				'm.color': null,
+				'm.ambient': null,
+				'm.texture.image': demo.getRes('gray.png'),
+				'front.m.texture.image': pic,
+				'back.m.texture.image': pic,
+			}
+		}
 
-        var parts=[{
-            //card panel
-            type: 'cube',
-            width: width,
-            height: height,
-            depth: 1,
-            translate: [x, y, z+1],
-            rotate: rotate,
-            op: '+',
-            style:style
-        },{
-            //card body
-            type: 'cube',
-            width: width*0.95,
-            height: 1,
-            depth: depth,
-            translate: [x, y+1.5, z-depth/2+1],
-            rotate: rotate,
-            op: '+',
-            style:{
-                'm.color': 'gray',
-                'm.ambient':'gray',
-				'm.transparent': true,
-                'm.texture.image': demo.getRes('gray.png'),
-                'top.m.texture.image': demo.getRes('card_body.png'),
-                'bottom.m.texture.image': demo.getRes('card_body.png'),
-                'left.m.texture.flipX': true,
-                'm.lightmap.image':demo.getRes('outside_lightmap.jpg'),
-            }
-        }];
+		var parts = [{
+			//card panel
+			type: 'cube',
+			width: width,
+			height: height,
+			depth: 1,
+			translate: [x, y, z + 1],
+			rotate: rotate,
+			op: '+',
+			style: style
+		}, {
+			//card body
+			type: 'cube',
+			width: width * 0.95,
+			height: 1,
+			depth: depth,
+			translate: [x, y + 1.5, z - depth / 2 + 1],
+			rotate: rotate,
+			op: '+',
+			style: {
+				'm.color': 'gray',
+				'm.ambient': 'gray',
+				'm.texture.image': demo.getRes('gray.png'),
+				'top.m.texture.image': demo.getRes('card_body.png'),
+				'bottom.m.texture.image': demo.getRes('card_body.png'),
+				'left.m.texture.flipX': true,
+				'm.lightmap.image': demo.getRes('outside_lightmap.jpg'),
+			}
+		}];
 
-        return demo.createCombo(parts);
-    },
+		return demo.createCombo(parts);
+	},
 
-    setServerP: function(temp_Y,temp_H){
-        var number,temp;
-         switch (temp_H){
-             case 1:
-                 temp = 0;
-                 break
-             case 2:
-                 temp = 0.55;
-                 break
-             case 3:
-                 temp = 1.1;
-                 break
-             case 4:
-                 temp = 1.65;
-                 break
-             case 5:
-                 temp = 2;
-                 break
-             case 6:
-                 temp = 2.55;
-                 break
-             case 7:
-                 temp = 3.1;
-                 break
-             case 8:
-                 temp = 3.55;
-                 break
-             case 9:
-                 temp = 4.1;
-                 break
-             case 10:
-                 temp = 4.6;
-                 break
-         }
-        return number = -94.5 + (4.6 * ((temp_Y - temp_H) + temp))
-    },
+	setServerP: function(temp_Y, temp_H) {
+		var number, temp;
+		switch (temp_H) {
+			case 1:
+				temp = 0;
+				break
+			case 2:
+				temp = 0.55;
+				break
+			case 3:
+				temp = 1.1;
+				break
+			case 4:
+				temp = 1.65;
+				break
+			case 5:
+				temp = 2;
+				break
+			case 6:
+				temp = 2.55;
+				break
+			case 7:
+				temp = 3.1;
+				break
+			case 8:
+				temp = 3.55;
+				break
+			case 9:
+				temp = 4.1;
+				break
+			case 10:
+				temp = 4.6;
+				break
+		}
+		return number = -94.5 + (4.6 * ((temp_Y - temp_H) + temp))
+	},
 
 	createShadowImage: function(box, floorWidth, floorHeight) {
 		var canvas = document.createElement('canvas');
@@ -1015,29 +1079,29 @@ var demo = {
 		context.fill();
 
 		var marker = function(context, text, text2, x, y) {
-			var color = '#0B2F3A'; //'#0B2F3A';//'#FE642E';
-			context.font = 60 + 'px "Microsoft Yahei" ';
-			context.fillStyle = color;
-			context.textAlign = 'center';
-			context.textBaseline = 'middle';
-			//context.shadowBlur = 30;
-			context.fillText(text, x, y);
-			context.strokeStyle = color;
-			context.lineWidth = 3;
-			context.strokeText(text, x, y);
+				var color = '#0B2F3A'; //'#0B2F3A';//'#FE642E';
+				context.font = 60 + 'px "Microsoft Yahei" ';
+				context.fillStyle = color;
+				context.textAlign = 'center';
+				context.textBaseline = 'middle';
+				//context.shadowBlur = 30;
+				context.fillText(text, x, y);
+				context.strokeStyle = color;
+				context.lineWidth = 3;
+				context.strokeText(text, x, y);
 
-			if (!text2) return;
-			y += 52;
-			color = '#FE642E';
-			context.font = 26 + 'px "Microsoft Yahei" ';
-			context.fillStyle = color;
-			context.textAlign = 'center';
-			context.textBaseline = 'middle';
-			context.fillText(text2, x, y);
-		}
-		// marker(context, '阿里巴巴', '192.168.1.100', 530, 500);
-		// marker(context, '乐视', '192.168.1.150', 590, 1000);
-		// marker(context, '亚马逊', 'ip待分配', 1020, 1000);
+				if (!text2) return;
+				y += 52;
+				color = '#FE642E';
+				context.font = 26 + 'px "Microsoft Yahei" ';
+				context.fillStyle = color;
+				context.textAlign = 'center';
+				context.textBaseline = 'middle';
+				context.fillText(text2, x, y);
+			}
+			// marker(context, '阿里巴巴', '192.168.1.100', 530, 500);
+			// marker(context, '乐视', '192.168.1.150', 590, 1000);
+			// marker(context, '亚马逊', 'ip待分配', 1020, 1000);
 
 		box.forEach(function(object) {
 			if (object instanceof mono.Entity && object.shadow) {
@@ -1246,7 +1310,7 @@ var demo = {
 		return demo.getRandomInt(time) + demo.LAZY_MIN;
 	},
 	// rack顶部canvas画字
-	generateAssetImage: function(text,pos) {
+	generateAssetImage: function(text, pos) {
 		var width = 512,
 			height = 256;
 
@@ -1269,33 +1333,209 @@ var demo = {
 
 		return canvas;
 	},
+	createColor: function(stmp, num_min, num) {
+		if (num < stmp + num_min) {
+			return "#F6EFA6";
+		}
+		if (num >= stmp + num_min && num < stmp * 2 + num_min) {
+			return "#EFD79B";
+		}
+		if (num >= stmp * 2 + num_min && num < stmp * 3 + num_min) {
+			return "#E9BF8F";
+		}
+		if (num >= stmp * 3 + num_min && num < stmp * 4 + num_min) {
+			return "#E2A684";
+		}
+		if (num >= stmp * 4 + num_min && num < stmp * 5 + num_min) {
+			return "#DB8E79";
+		}
+		if (num >= stmp * 5 + num_min && num < stmp * 6 + num_min) {
+			return "#D57B6F";
+		}
+		if (num >= stmp * 6 + num_min && num < stmp * 7 + num_min) {
+			return "#D06D66";
+		}
+		if (num >= stmp * 7 + num_min && num < stmp * 8 + num_min) {
+			return "#CA605D";
+		}
+		if (num >= stmp * 8 + num_min && num < stmp * 9 + num_min) {
+			return "#C55255";
+		}
+		if (num >= stmp * 9 + num_min) {
+			return "#BF444C";
+		}
+	},
 
-	toggleTemperatureView: function(network){
-		network.temperatureView=!network.temperatureView;
+	toggleTemperatureView: function(network) {
+		// 默认png图片从上往下
+		function draw(obj) {
+			var ctx = document.getElementById('canvas').getContext('2d');
+			var single = 200 / 42;
+			for (var i = 0; i < 42; i++) {
+				ctx.fillStyle = obj[i][1];
+				ctx.fillRect(0, i * single, 1, 200);
+			}
+		};
 
-		network.getDataBox().forEach(function(element){						
-			var type=element.getClient('type');
+		function base64Img2Blob(code) {
+			var parts = code.split(';base64,');
+			var contentType = parts[0].split(':')[1];
+			// console.log(parts + " \n " + parts[0] + "\n " + parts[1])
+			// 解码 window.atob
+			var raw = window.atob(parts[1]);
+			var rawLength = raw.length;
 
-			if(type==='rack' || type==='rack.door'){	
+			var uInt8Array = new Uint8Array(rawLength);
+
+			for (var i = 0; i < rawLength; ++i) {
+				uInt8Array[i] = raw.charCodeAt(i);
+			}
+
+			return new Blob([uInt8Array], {
+				type: contentType
+			});
+		}
+
+		function createRackImage(fileName, content) {
+
+			var aLink = document.createElement('img');
+			var blob = base64Img2Blob(content);
+			aLink.src = URL.createObjectURL(blob);
+			return aLink.src;
+		}
+
+		function getImage(filename, obj) {
+			draw(obj)
+			return createRackImage(filename + '.png', canvas.toDataURL("image/png"));
+		}
+
+
+
+		network.temperatureView = !network.temperatureView;
+
+		network.getDataBox().forEach(function(element) {
+			var type = element.getClient('type');
+
+			if (type === 'rack' || type === 'rack.door') {
 				element.setVisible(!network.temperatureView);
-				if(type==='rack'){
-					if(!element.temperatureFake1&&!element.temperatureFake2){
-						var fake1 = new mono.Cube(element.getWidth()/2, element.getHeight()+20, element.getDepth());
-						// fake1
-						element.temperatureFake1 = fake1;
-						// 高度随机分成10层
-						var sideImage1 = demo.createSideTemperatureImage(element, 3+Math.random()*10);
+				if (type === 'rack') {
+					var rackid = element.getClient('rackid');
+					if (!element.temperatureFake1 && !element.temperatureFake2) {
+						var server = element.getClient('server');
+						var chassis = element.getClient('chassis');
+						// 高度随机分成arrTemp.length层,从上往下填充色带
+						// 拿到所有temp的值
+						// var tempValue = [];
+						// for (var j = 0; j < server.length; j++) {
+						// 	tempValue.push(server[j].temp);
+						// }
+						// for (var j = 0; j < chassis.length; j++) {
+						// 	var cards = chassis[j].cards;
+						// 	for (var k = 0; k < cards.length; k++) {
+						// 		tempValue.push(cards[k].temp);
+						// 	}
+						// }
+						// var num_min = Math.min.apply(null, tempValue);
+						// var num_max = Math.max.apply(null, tempValue);
+						// var num;
+						// num = (num_max - num_min) / 10;
+						// 假数据
+						var num_min = 0;
+						var num_max = 120;
+						var num;
+						num = (num_max - num_min) / 10;
+						// console.log(JSON.stringify(tempValue))
+						// var Acolor = ['#18ff00', '#fff600', '#0012ff', '#ff00d2', '#00f0ff', '#fff000', '#4b83b3', '#6bb34b', '#b3a34b', '#b36d4b', '#b34b9c', '#ff0000'];
 
-						var label=element.getClient('label');
-						label_l=label.split("").splice(0,2).join(" ");
-						var labelCanvas_l = demo.generateAssetImage(label_l,"left");
+						var fake1 = new mono.Cube(element.getWidth() / 2, element.getHeight(), element.getDepth());
+
+						element.temperatureFake1 = fake1;
+						var item_left = [],
+							item_right = [];
+						for (var i = 42; i > 0; i--) {
+
+							for (var j = 0; j < server.length; j++) {
+								if (server[j].position == i) {
+									var u = server[j].u;
+									// var tempValue = server[j].temp;
+									var tempValue = Math.random() * 100 + 20;
+									var Tempcolor = demo.createColor(num, num_min, tempValue);
+									for (var h = 0; h < u; h++) {
+										item_left.push([i - h, Tempcolor, 'server']);
+										item_right.push([i - h, Tempcolor, 'server']);
+									}
+									i = i - u;
+								}
+							};
+							for (var j = 0; j < chassis.length; j++) {
+								var cha_pos = chassis[j].position;
+								var cards = chassis[j].cards;
+								if (cha_pos == i) {
+									for (var h = 13; h >= 0; h--) {
+										for (var k = cards.length - 1; k >= 0; k--) {
+											if (cards[k].position - 1 == h) {
+												if (cards[k].position % 2 != 0) {
+													// var tempValue = cards[k].temp;
+													var tempValue = Math.random() * 100 + 20;
+													var Tempcolor = demo.createColor(num, num_min, tempValue);
+													var card_pos = cha_pos + (cards[k].position + 1) / 2 - 7;
+													item_left.push([card_pos, Tempcolor, 'chassis']);
+													h = h - 1;
+												} else {
+													// var tempValue = cards[k].temp;
+													var tempValue = Math.random() * 100 + 20;
+													var Tempcolor = demo.createColor(num, num_min, tempValue);
+													var card_pos = cha_pos + cards[k].position / 2 - 7;
+													item_right.push([card_pos, Tempcolor, 'chassis']);
+													h = h - 1;
+												}
+											}
+										}
+										// 在chassis的左边
+										if (h % 2 == 0 && h >= 0) {
+											var card_pos_left = cha_pos + h / 2 - 6;
+											item_left.push([card_pos_left, '#fff', 'chassis']);
+										} else if (h >= 0) {
+											var card_pos_right = cha_pos + (h - 1) / 2 - 6;
+											item_right.push([card_pos_right, '#fff', 'chassis']);
+										}
+									}
+									item_left.push([i - 7, '#ccc', 'null']);
+									item_right.push([i - 7, '#ccc', 'null']);
+									i = i - 8;
+									break;
+								}
+							};
+							for (var j = 0; j < server.length; j++) {
+								if (server[j].position == i) {
+									var u = server[j].u;
+									// var tempValue = server[j].temp;
+									var tempValue = Math.random() * 100 + 20;
+									var Tempcolor = demo.createColor(num, num_min, tempValue);
+									for (var h = 0; h < u; h++) {
+										item_left.push([i - h, Tempcolor, 'server']);
+										item_right.push([i - h, Tempcolor, 'server']);
+									}
+									i = i - u;
+								}
+							};
+							item_left.push([i, '#fff', 'server']);
+							item_right.push([i, '#fff', 'server']);
+						}
+						// console.log(JSON.stringify(item_left)+" length"+item_left.length)
+						// console.log(JSON.stringify(item_right)+" length"+item_right.length)
+
+						var sideImage1 = getImage(rackid + 'left', item_left);
+						var label = element.getClient('label');
+						label_l = label.split("").splice(0, 2).join(" ");
+						var labelCanvas_l = demo.generateAssetImage(label_l, "left");
 						fake1.setStyle('top.m.texture.image', labelCanvas_l);
 						fake1.setStyle('top.m.specularmap.image', labelCanvas_l);
 
 						fake1.s({
 							// 6面的温度image
 							'left.m.texture.image': sideImage1,
-							'right.m.texture.image': sideImage1,
+							'right.m.texture.image': null,
 							'front.m.texture.image': sideImage1,
 							'back.m.texture.image': sideImage1,
 							'top.m.texture.image': fake1.getStyle('top.m.texture.image'),
@@ -1309,18 +1549,18 @@ var demo = {
 
 
 						// fake2
-						var fake2 = new mono.Cube(element.getWidth()/2, element.getHeight()+20, element.getDepth());
+						var fake2 = new mono.Cube(element.getWidth() / 2, element.getHeight(), element.getDepth());
 						element.temperatureFake2 = fake2;
 						// 高度随机分成10层
-						var sideImage2 = demo.createSideTemperatureImage(element, 3+Math.random()*10);
+						var sideImage2 = getImage(rackid + 'right', item_right);;
 
-						label_r=label.split("").splice(2,2).join(" ");
-						var labelCanvas_r = demo.generateAssetImage(label_r,"right");
+						label_r = label.split("").splice(2, 2).join(" ");
+						var labelCanvas_r = demo.generateAssetImage(label_r, "right");
 						fake2.setStyle('top.m.texture.image', labelCanvas_r);
 						fake2.setStyle('top.m.specularmap.image', labelCanvas_r);
 
 						fake2.s({
-							'left.m.texture.image': sideImage2,
+							'left.m.texture.image': null,
 							'right.m.texture.image': sideImage2,
 							'front.m.texture.image': sideImage2,
 							'back.m.texture.image': sideImage2,
@@ -1333,131 +1573,116 @@ var demo = {
 						});
 						network.getDataBox().add(fake2);
 					};
-					var x=element.getPositionX();
-					var y=element.getPositionY();
-					var z=element.getPositionZ();
-					element.temperatureFake1.setPosition(x,y,z);
+					var x = element.getPositionX();
+					var y = element.getPositionY();
+					var z = element.getPositionZ();
+					element.temperatureFake1.setPosition(x - 15, y, z);
 					element.temperatureFake1.setVisible(network.temperatureView);
 
-					element.temperatureFake2.setPosition(x+element.getWidth()/2,y,z);
+					element.temperatureFake2.setPosition(x + element.getWidth() / 2 - 15, y, z);
 					element.temperatureFake2.setVisible(network.temperatureView);
 				}
 			}
+
 		});
 	},
-	// 画  温度图
-	createSideTemperatureImage: function(rack, count) {
-		var width = 2;
-		var height = rack.getHeight();
-		var step = height / count;
-		var board = new TemperatureBoard(width, height, 'v', height / count);
 
-		for (var i = 0; i < count; i++) {
-			var value = 0.3 + Math.random() * 0.2;
-			if (value < 4) {
-				value = Math.random() * 0.9;
-			}
-			// 第2个参数是 每个节点所占高度，第三个参数是温度颜色值
-			board.addPoint(width/2,step*i,value);
-		};
-		return board.getImage();
-	},
 
 	resetView: function(network) {
 		demo.resetCamera(network);
 
 		//reset all racks. unload contents, close door.
-		var loadedRacks=[];
-		network.getDataBox().forEach(function(element){
-			if(element.getClient('type')==='rack' && element.oldRack){
+		var loadedRacks = [];
+		network.getDataBox().forEach(function(element) {
+			if (element.getClient('type') === 'rack' && element.oldRack) {
 				loadedRacks.push(element);
 			}
 		});
-		for(var i=0;i<loadedRacks.length;i++){
+		for (var i = 0; i < loadedRacks.length; i++) {
 			//restore the old rack.
-			var newRack=loadedRacks[i];
-			var oldRack=newRack.oldRack;
+			var newRack = loadedRacks[i];
+			var oldRack = newRack.oldRack;
 
-			if(newRack.alarm){
+			if (newRack.alarm) {
 				network.getDataBox().getAlarmBox().remove(newRack.alarm);
 			}
-			network.getDataBox().removeByDescendant(newRack,true);
+			network.getDataBox().removeByDescendant(newRack, true);
 
 			network.getDataBox().add(oldRack);
-			if(oldRack.alarm){
+			if (oldRack.alarm) {
 				network.getDataBox().getAlarmBox().add(oldRack.alarm);
 			}
 			oldRack.door.setParent(oldRack);
 			oldRack.setClient('loaded', false);
-			
+
 			//reset door.
-			var door=oldRack.door;
+			var door = oldRack.door;
 			network.getDataBox().add(door);
-			if(door.getClient('animated')){
+			if (door.getClient('animated')) {
 				demo.playAnimation(door, door.getClient('animation'));
 			}
 		}
 
 		//reset room door.
-		var doors=[];
-		network.getDataBox().forEach(function(element){
-			if(element.getClient('type')==='left-door' || element.getClient('type')==='right-door'){
+		var doors = [];
+		network.getDataBox().forEach(function(element) {
+			if (element.getClient('type') === 'left-door' || element.getClient('type') === 'right-door') {
 				doors.push(element);
 			}
 		});
-		for(var i=0;i<doors.length;i++){
-			var door=doors[i];
-			if(door.getClient('animated')){
+		for (var i = 0; i < doors.length; i++) {
+			var door = doors[i];
+			if (door.getClient('animated')) {
 				demo.playAnimation(door, door.getClient('animation'));
 			}
 		}
 
 		//reset all views.
-		if(network.temperatureView){
+		if (network.temperatureView) {
 			demo.toggleTemperatureView(network);
 		}
 	},
 
-	setupControlBar : function(network){
+	setupControlBar: function(network) {
 		var div = document.createElement('div');
 
-	    div.setAttribute('id', 'toolbar');
+		div.setAttribute('id', 'toolbar');
 		div.style.display = 'block';
 		div.style.position = 'absolute';
 		div.style.left = '20px';
 		div.style.top = '10px';
-		div.style.width='auto';
-        document.body.appendChild(div);      
+		div.style.width = 'auto';
+		document.body.appendChild(div);
 	},
 
-	setupToolbar: function(buttons){		
-		var count=buttons.length;
-		var step=32;
+	setupToolbar: function(buttons) {
+		var count = buttons.length;
+		var step = 32;
 
-		var div=document.createElement('div');
+		var div = document.createElement('div');
 		div.setAttribute('id', 'toolbar');
 		div.style.display = 'block';
 		div.style.position = 'absolute';
 		div.style.left = '10px';
 		div.style.top = '75px';
-		div.style.width='32px';
-		div.style.height=(count*step+step)+'px';
-		div.style.background='rgba(255,255,255,0.75)';						
-		div.style['border-radius']='5px';
+		div.style.width = '32px';
+		div.style.height = (count * step + step) + 'px';
+		div.style.background = 'rgba(255,255,255,0.75)';
+		div.style['border-radius'] = '5px';
 		document.body.appendChild(div);
 
-		for(var i=0;i<count;i++){
-			var button=buttons[i];
-			var icon=button.icon;
-			var img=document.createElement('img');
+		for (var i = 0; i < count; i++) {
+			var button = buttons[i];
+			var icon = button.icon;
+			var img = document.createElement('img');
 			img.style.position = 'absolute';
-			img.style.left=  '4px';
-			img.style.top = (step/2+(i * step))+'px';			
-			img.style['pointer-events']='auto';
-			img.style['cursor']='pointer';
-			img.setAttribute('src', demo.getRes(icon));		
-			img.style.width='24px';
-			img.style.height='24px';
+			img.style.left = '4px';
+			img.style.top = (step / 2 + (i * step)) + 'px';
+			img.style['pointer-events'] = 'auto';
+			img.style['cursor'] = 'pointer';
+			img.setAttribute('src', demo.getRes(icon));
+			img.style.width = '24px';
+			img.style.height = '24px';
 			img.setAttribute('title', button.label);
 			img.onclick = button.clickFunction;
 			div.appendChild(img);

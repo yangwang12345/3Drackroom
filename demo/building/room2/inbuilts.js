@@ -77,16 +77,25 @@ demo.registerFilter('plants', function(box, json) {
 demo.registerFilter('racks', function(box, json) {
 	var objects = [];
 	var translates = json.translates;
+	var ids = json.ids;
+	var servers=json.servers;
+	var chassises=json.chassises;
 	var labels = json.labels || [];
 	if (translates) {
 		for (var i = 0; i < translates.length; i++) {
 			var translate = translates[i];
+			var id = ids[i];
+			var server=servers[id]||'';
+			var chassis=chassises[id]||'';
 			var label = labels[i] || '';
 			var rack = {
 				type: 'rack',
 				shadow: true,
 				translate: translate,
 				label: label,
+				id:id,
+				server:server,
+				chassis:chassis
 			};
 			demo.copyProperties(json, rack, ['type', 'translates', 'translate']);
 			objects.push(rack);
@@ -460,7 +469,11 @@ demo.registerCreator('rack', function(box, json) {
 	var height = json.height || 200;
 	var depth = json.depth || 80;
 	var label = json.label;
+	var cha = json.label;
 	var shadow = json.shadow;
+	var id = json.id;
+	var server=json.server;
+	var chassis=json.chassis;
 
 	var rack = new mono.Cube(width, height, depth);
 	rack.s({
@@ -498,7 +511,13 @@ demo.registerCreator('rack', function(box, json) {
 	rack.setStyle('top.m.specularmap.image', labelCanvas);
 
 	rack.setClient('label', label);
+	rack.setClient('server', server);
+	rack.setClient('chassis', chassis);
 	rack.setClient('type', 'rack');
+
+
+	// rack.setClient('obj_racks', obj_racks);
+	rack.setClient('rackid', id);
 	rack.setClient('origin', rack.getPosition().clone());
 	rack.setClient('loaded', false);
 	rack.shadow = shadow;
